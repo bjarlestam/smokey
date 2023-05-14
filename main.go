@@ -44,6 +44,7 @@ type EpsilonGreedyStrategy struct {
 	Epsilon float64
 	Bandits []*Bandit
 	Rewards map[Context][]float64
+	Counts  map[Context][]int
 }
 
 type TrainingData struct {
@@ -76,7 +77,8 @@ func (s *EpsilonGreedyStrategy) SelectBandit(ctx Context) *Bandit {
 func (s *EpsilonGreedyStrategy) UpdateReward(ctx Context, b *Bandit, reward float64) {
 	for i := range s.Bandits {
 		if s.Bandits[i] == b {
-			s.Rewards[ctx][i] = ((s.Rewards[ctx][i] * float64(i)) + reward) / float64(i+1)
+			s.Counts[ctx][i]++
+			s.Rewards[ctx][i] = ((s.Rewards[ctx][i] * float64(s.Counts[ctx][i]-1)) + reward) / float64(s.Counts[ctx][i])
 		}
 	}
 }
@@ -118,6 +120,7 @@ func trainModel() {
 		Epsilon: 0.1, // fraction of exploration 0.1 = 10% exploration
 		Bandits: bandits,
 		Rewards: make(map[Context][]float64),
+		Counts:  make(map[Context][]int),
 	}
 
 	log.Print("Training...")
@@ -125,6 +128,7 @@ func trainModel() {
 	// Train the model
 	for _, ctx := range contexts {
 		strategy.Rewards[ctx] = make([]float64, len(bandits))
+		strategy.Counts[ctx] = make([]int, len(bandits)) // initialize counts to zero
 		for i := 0; i < 10000; i++ {
 			bandit := strategy.SelectBandit(ctx)
 			reward := bandit.Pull(ctx)
@@ -147,6 +151,7 @@ func loadModelAndSelectAnItem(userId *string, timeOfDay *string, weekday *string
 		Epsilon: 0.1,
 		Bandits: nil,
 		Rewards: make(map[Context][]float64),
+		Counts:  make(map[Context][]int),
 	}
 	log.Print("Loading model")
 	filename := "strategy.gob"
