@@ -77,6 +77,7 @@ func (s *EpsilonGreedyStrategy) SelectBandit(ctx Context) *Bandit {
 func (s *EpsilonGreedyStrategy) UpdateReward(ctx Context, b *Bandit, reward float64) {
 	for i := range s.Bandits {
 		if s.Bandits[i] == b {
+			// calculate running average of the reward
 			s.Counts[ctx][i]++
 			s.Rewards[ctx][i] = ((s.Rewards[ctx][i] * float64(s.Counts[ctx][i]-1)) + reward) / float64(s.Counts[ctx][i])
 		}
